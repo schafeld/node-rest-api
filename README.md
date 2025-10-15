@@ -231,11 +231,12 @@ The API includes full CORS support with the following headers:
 
 ## Demo Application 🏪
 
-### Items Store Manager - Web Interface
+### Items Store Manager - Material Design Web Interface
 
-A complete web-based demo application that provides an intuitive interface for managing items through the REST API.
+A complete web-based demo application with **Material Design** that provides an intuitive interface for managing items through the REST API. Features professional UI/UX with modern design principles.
 
-**Quick Start:**
+**🚀 Quick Start (Local Development):**
+
 ```bash
 # Start both API server and demo application
 ./start-demo.sh
@@ -245,18 +246,41 @@ node server.js    # Terminal 1 - API server (port 3000)
 node index.js     # Terminal 2 - Demo app (port 8080)
 ```
 
+**🌐 Static Deployment (Netlify/Vercel):**
+
+```bash
+# Serve static files (demo mode with mock data)
+npm run serve
+
+# Deploy to Netlify
+npm run deploy:netlify
+
+# Deploy to Vercel  
+npm run deploy:vercel
+```
+
 **Open in browser:** `http://localhost:8080`
 
-### Features
+### ✨ Material Design Features
 
-- 📱 **Responsive Web Interface** - Works on desktop and mobile
-- 📊 **Real-time Statistics** - Total items, in-stock count, out-of-stock count
-- ➕ **Add Items** - Form-based item creation with validation
-- ✏️ **Edit Items** - Click-to-edit functionality with pre-filled forms
-- 🗑️ **Delete Items** - One-click deletion with confirmation
-- 🔄 **Reset to Default** - Restore original sample data
-- 🎯 **Visual Feedback** - Success/error messages and loading states
-- 🔍 **Auto-Detection** - Checks API server status automatically
+- 🎨 **Material Design UI** - Professional design following Google's Material Design principles
+- 📱 **Responsive Interface** - Adaptive layout for desktop, tablet, and mobile
+- 📊 **Statistics Dashboard** - Material Design cards with real-time data
+- ⚡ **Floating Action Button** - Quick access to add new items
+- 🏗️ **Material Components** - Buttons, forms, alerts, and navigation following MD specs
+- 🎭 **Smooth Animations** - Elevation changes, hover effects, and transitions
+- 🌈 **Consistent Theming** - Material Design color palette and typography
+- 📋 **Interactive Lists** - Material Design list styling with icons and actions
+- 🔔 **Snackbar Alerts** - Material Design notification system
+- � **Auto-Detection** - Smart environment detection (development vs production)
+
+### 🚀 Deployment Features
+
+- � **Static Deployment Ready** - Deploy to Netlify, Vercel, GitHub Pages
+- 🔄 **Dual Mode Operation** - API integration + standalone demo mode
+- 🌐 **Progressive Enhancement** - Works offline with mock data
+- ⚙️ **Environment Detection** - Automatic fallback from API to demo mode
+- 🔧 **Easy Configuration** - Simple config for different API endpoints
 
 ### Demo Application Architecture
 

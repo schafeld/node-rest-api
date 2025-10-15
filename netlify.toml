@@ -1,0 +1,40 @@
+# Netlify Build Configuration
+
+[build]
+  # Directory to publish (build output directory)
+  publish = "."
+  
+  # Build command (not needed for static site)
+  # command = ""
+
+[build.environment]
+  # Environment variables for build
+  NODE_VERSION = "18"
+
+# Headers for all pages
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Security headers
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    
+    # Enable CORS for API calls (if needed)
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+
+# Redirects and rewrites
+[[redirects]]
+  # Redirect root to index.html (for SPA behavior)
+  from = "/"
+  to = "/index.html"
+  status = 200
+
+# Optional: Custom 404 page
+# [[redirects]]
+#   from = "/*"
+#   to = "/404.html"
+#   status = 404

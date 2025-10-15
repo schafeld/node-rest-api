@@ -135,6 +135,7 @@ http.createServer(async function (req, res) {
                                 <li><span class="method post">POST</span> <code>/items</code> - Create new item</li>
                                 <li><span class="method put">PUT</span> <code>/items/1</code> - Update item by ID</li>
                                 <li><span class="method delete">DELETE</span> <code>/items/1</code> - Delete item by ID</li>
+                                <li><span class="method post">POST</span> <code>/reset</code> - Reset to original data</li>
                             </ul>
                             
                             <h4>Example curl commands:</h4>
@@ -157,6 +158,9 @@ curl -X PUT http://localhost:3000/items/1 \\
 
 # Delete item
 curl -X DELETE http://localhost:3000/items/1
+
+# Reset data to original state
+curl -X POST http://localhost:3000/reset
                             </pre>
                         </div>
                     </body>
@@ -298,6 +302,29 @@ curl -X DELETE http://localhost:3000/items/1
             return;
         }
 
+        // Route: POST /reset - Reset data to original items.json
+        if (method === 'POST' && pathname === '/reset') {
+            try {
+                // Reload original data from items.json file
+                const originalData = JSON.parse(fs.readFileSync('./items.json', 'utf8'));
+                items = [...originalData]; // Reset the items array
+                
+                sendJsonResponse(res, 200, {
+                    message: 'Data reset to original state successfully',
+                    itemCount: items.length,
+                    items: items
+                });
+                return;
+            } catch (error) {
+                console.error('Error resetting data:', error);
+                sendJsonResponse(res, 500, {
+                    error: 'Internal Server Error',
+                    message: 'Failed to reset data: ' + error.message
+                });
+                return;
+            }
+        }
+
         // Route not found
         sendJsonResponse(res, 404, {
             error: 'Not Found',
@@ -309,6 +336,7 @@ curl -X DELETE http://localhost:3000/items/1
                 'POST /items',
                 'PUT /items/:id',
                 'DELETE /items/:id',
+                'POST /reset',
                 'OPTIONS (any route)'
             ]
         });
@@ -330,6 +358,7 @@ curl -X DELETE http://localhost:3000/items/1
     console.log('  POST   /items      - Create new item');
     console.log('  PUT    /items/:id  - Update item');
     console.log('  DELETE /items/:id  - Delete item');
+    console.log('  POST   /reset      - Reset to original data');
     console.log('  OPTIONS (any)      - CORS preflight');
 });
 

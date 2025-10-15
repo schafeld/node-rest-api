@@ -10,7 +10,13 @@
     "dev": "echo 'Starting both servers...' && (node server.js & node index.js)",
     "test-api": "node test-endpoints.js",
     "demo-bash": "./demo.sh",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "echo 'No build step required for static deployment'",
+    "serve": "python -m http.server 8080 2>/dev/null || python3 -m http.server 8080 2>/dev/null || npx serve .",
+    "deploy:netlify": "npx netlify deploy --prod --dir=.",
+    "deploy:vercel": "npx vercel --prod",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug"
   },
   "repository": {
     "type": "git",
@@ -27,5 +33,8 @@
   "bugs": {
     "url": "https://github.com/schafeld/node-rest-api/issues"
   },
-  "homepage": "https://github.com/schafeld/node-rest-api#readme"
+  "homepage": "https://github.com/schafeld/node-rest-api#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.56.0"
+  }
 }
