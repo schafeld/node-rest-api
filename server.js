@@ -1,9 +1,24 @@
-var http = require('http');
+const http = require('http');
+const itemsJson = require('./items.json');
 
 http.createServer(function (req, res) {
-  res.writeHead(200, {'Content-Type': 'text/plain'});
-  res.end('Hello World\n');
-}).listen(3000, '127.0.0.1');
 
-console.log('Server running at http://127.0.0.1:1337/');
+    console.log('req.method: ' + req.method);
+
+    if (req.method === 'GET') {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'text/html');
+        res.write('<html><body><h1>This is a fruit list.</h1><ul>');
+
+        itemsJson.forEach(item => {
+            res.write(`<li>${item.name} - $${item.price}</li>`);
+        });
+        
+        res.write('</ul></body></html>\n');
+        res.end();
+    }
+
+}).listen(3000, () => {
+  console.log('Server running at http://127.0.0.1:3000/');
+});
 
