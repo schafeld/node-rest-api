@@ -7,13 +7,15 @@ http.createServer(function (req, res) {
 
     if (req.method === 'GET') {
         res.statusCode = 200;
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         res.setHeader('Content-Type', 'text/html');
         res.write('<html><body><h1>This is a fruit list.</h1><ul>');
 
         itemsJson.forEach(item => {
             res.write(`<li>${item.name} - $${item.price}</li>`);
         });
-        
+
         res.write('</ul></body></html>\n');
         res.end();
     }
