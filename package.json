@@ -1,0 +1,25 @@
+{
+  "name": "rest-api",
+  "version": "0.0.1",
+  "description": "A basic Node.js REST API.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/schafeld/node-rest-api.git"
+  },
+  "keywords": [
+    "rest",
+    "node",
+    "javascript",
+    "api"
+  ],
+  "author": "Oliver Schafeld",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/schafeld/node-rest-api/issues"
+  },
+  "homepage": "https://github.com/schafeld/node-rest-api#readme"
+}
