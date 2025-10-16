@@ -220,4 +220,4 @@ To extend this demo:
 
 ## 📄 License
 
-This project is part of the Coursera Node.js REST API course and is intended for educational purposes.
+MIT, author: Oliver Schafeld, 2025, (with Github Copilot and Claude in Agent mode).

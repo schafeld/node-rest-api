@@ -329,7 +329,7 @@ node-rest-api/
 
 ## Notes
 
-Started as [Coursera short course](https://www.coursera.org/learn/node-js-restful-api-backend-app/ungradedLab/sn2al/apis-in-node-js-write-a-restful-api-backend-app); massively extended with full CRUD operations.
+Check out this [Coursera short course](https://www.coursera.org/learn/node-js-restful-api-backend-app/ungradedLab/sn2al/apis-in-node-js-write-a-restful-api-backend-app) to learn the basics of Node.js CRUD API apps.
 
 ## Future Enhancements
 
