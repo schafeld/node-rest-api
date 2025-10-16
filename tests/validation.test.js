@@ -14,7 +14,10 @@ describe('Validation Utils Unit Tests', () => {
       it('should validate correct item data', () => {
         const result = validateItemData(validItemData);
         expect(result.error).toBeUndefined();
-        expect(result.value).toEqual(validItemData);
+        expect(result.value).toEqual({
+          ...validItemData,
+          inStock: true  // Default value added by validation
+        });
       });
 
       it('should apply default quantity when not provided', () => {
@@ -221,6 +224,7 @@ describe('Validation Utils Unit Tests', () => {
 
       it('should handle undefined input', () => {
         const result = validateItemData(undefined);
+        expect(result).toBeDefined();
         expect(result.error).toBeDefined();
       });
 
@@ -249,25 +253,25 @@ describe('Validation Utils Unit Tests', () => {
       it('should validate positive integer', () => {
         const result = validateItemId(1);
         expect(result.error).toBeUndefined();
-        expect(result.value).toBe(1);
+        expect(result.value.id).toBe(1);
       });
 
       it('should validate large positive integer', () => {
         const result = validateItemId(999999);
         expect(result.error).toBeUndefined();
-        expect(result.value).toBe(999999);
+        expect(result.value.id).toBe(999999);
       });
 
       it('should convert string numbers', () => {
         const result = validateItemId('123');
         expect(result.error).toBeUndefined();
-        expect(result.value).toBe(123);
+        expect(result.value.id).toBe(123);
       });
 
       it('should convert string numbers with whitespace', () => {
         const result = validateItemId('  456  ');
         expect(result.error).toBeUndefined();
-        expect(result.value).toBe(456);
+        expect(result.value.id).toBe(456);
       });
     });
 
@@ -336,7 +340,7 @@ describe('Validation Utils Unit Tests', () => {
       it('should handle string representation of large numbers', () => {
         const result = validateItemId('1000000');
         expect(result.error).toBeUndefined();
-        expect(result.value).toBe(1000000);
+        expect(result.value.id).toBe(1000000);
       });
     });
   });

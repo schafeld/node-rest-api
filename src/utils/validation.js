@@ -195,8 +195,36 @@ const querySchemas = {
   }).options({ stripUnknown: true })
 };
 
+// Validation helper functions
+const validateItemData = (data) => {
+  if (data === undefined || data === null) {
+    return {
+      error: {
+        details: [{ message: 'Data is required' }]
+      }
+    };
+  }
+  return itemSchemas.create.validate(data, { abortEarly: false });
+};
+
+const validateItemId = (id) => {
+  return itemSchemas.id.validate({ id }, { abortEarly: false });
+};
+
+const validateItemUpdate = (data) => {
+  return itemSchemas.update.validate(data, { abortEarly: false });
+};
+
+const validateQuery = (query) => {
+  return querySchemas.list.validate(query, { abortEarly: false });
+};
+
 module.exports = {
   itemSchemas,
   querySchemas,
-  VALID_CATEGORIES
+  VALID_CATEGORIES,
+  validateItemData,
+  validateItemId,
+  validateItemUpdate,
+  validateQuery
 };

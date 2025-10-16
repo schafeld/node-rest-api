@@ -1,5 +1,6 @@
 const dataService = require('../services/dataService');
-const { NotFoundError, InternalServerError } = require('../utils/errors');
+const { ValidationError, NotFoundError, InternalServerError } = require('../utils/errors');
+const validation = require('../utils/validation');
 const logger = require('../utils/logger');
 
 class ItemController {
@@ -10,8 +11,17 @@ class ItemController {
     try {
       let items = await dataService.getAllItems();
       
-      // Apply filters if provided
-      const { category, inStock, search, sortBy, sortOrder, page, limit } = req.query;
+      // Apply filters if provided with defaults and type conversion
+      const { 
+        category, 
+        inStock, 
+        search, 
+        sortBy = 'id', 
+        sortOrder = 'asc'
+      } = req.query;
+      
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
       
       // Filter by category
       if (category) {
@@ -85,6 +95,13 @@ class ItemController {
   async getItemById(req, res, next) {
     try {
       const { id } = req.params;
+      
+      // Validate ID format
+      const { error } = validation.validateItemId(id);
+      if (error) {
+        return next(new ValidationError('Invalid item ID format'));
+      }
+      
       const item = await dataService.getItemById(id);
       
       if (!item) {
@@ -111,6 +128,12 @@ class ItemController {
    */
   async createItem(req, res, next) {
     try {
+      // Validate request body
+      const { error } = validation.validateItemData(req.body);
+      if (error) {
+        return next(new ValidationError('Invalid item data', error.details));
+      }
+      
       const newItem = await dataService.createItem(req.body);
       
       res.status(201).json({
@@ -134,6 +157,19 @@ class ItemController {
   async updateItem(req, res, next) {
     try {
       const { id } = req.params;
+      
+      // Validate ID format
+      const { error: idError } = validation.validateItemId(id);
+      if (idError) {
+        return next(new ValidationError('Invalid item ID format'));
+      }
+      
+      // Validate update data
+      const { error: dataError } = validation.validateItemUpdate(req.body);
+      if (dataError) {
+        return next(new ValidationError('Invalid update data', dataError.details));
+      }
+      
       const updatedItem = await dataService.updateItem(id, req.body);
       
       if (!updatedItem) {
@@ -162,6 +198,13 @@ class ItemController {
   async deleteItem(req, res, next) {
     try {
       const { id } = req.params;
+      
+      // Validate ID format
+      const { error } = validation.validateItemId(id);
+      if (error) {
+        return next(new ValidationError('Invalid item ID format'));
+      }
+      
       const deletedItem = await dataService.deleteItem(id);
       
       if (!deletedItem) {

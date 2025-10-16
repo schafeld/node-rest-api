@@ -6,6 +6,9 @@ const router = express.Router();
 // Mount the items routes
 router.use('/items', itemsRouter);
 
+// Stats endpoint at root level
+router.get('/stats', require('../controllers/itemController').getStats);
+
 // Health check endpoint
 router.get('/health', (req, res) => {
   res.json({

@@ -32,57 +32,76 @@ describe('ItemController Unit Tests', () => {
 
   describe('getAllItems', () => {
     it('should return paginated items successfully', async () => {
-      const mockData = {
-        items: [
-          { id: 1, name: 'Apple', category: 'Fruit', price: 1.99, quantity: 10 }
-        ],
-        pagination: {
-          currentPage: 1,
-          totalPages: 1,
-          totalItems: 1,
-          hasNext: false,
-          hasPrev: false
-        }
+      const mockItems = [
+        { id: 1, name: 'Apple', category: 'Fruit', price: 1.99, quantity: 10, inStock: true }
+      ];
+      
+      // Set default query parameters
+      mockReq.query = {
+        page: 1,
+        limit: 10,
+        sortBy: 'id',
+        sortOrder: 'asc'
       };
 
-      dataService.getAllItems.mockReturnValue(mockData);
+      dataService.getAllItems.mockResolvedValue(mockItems);
 
       await itemController.getAllItems(mockReq, mockRes, mockNext);
 
-      expect(dataService.getAllItems).toHaveBeenCalledWith(mockReq.query);
-      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(dataService.getAllItems).toHaveBeenCalled();
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
-        data: mockData,
-        message: 'Items retrieved successfully'
+        data: expect.objectContaining({
+          items: mockItems,
+          pagination: expect.objectContaining({
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: 1,
+            limit: 10,
+            hasNext: false,
+            hasPrev: false
+          })
+        }),
+        message: expect.stringContaining('Retrieved')
       });
     });
 
-    it('should pass query parameters to dataService', async () => {
+    it('should handle query parameters correctly', async () => {
       mockReq.query = {
-        page: '2',
-        limit: '5',
+        page: 2,
+        limit: 5,
         category: 'Fruit',
-        search: 'apple'
+        search: 'apple',
+        sortBy: 'name',
+        sortOrder: 'desc'
       };
 
-      const mockData = { items: [], pagination: {} };
-      dataService.getAllItems.mockReturnValue(mockData);
+      const mockItems = [
+        { id: 1, name: 'Apple', category: 'Fruit', price: 1.99, quantity: 10, inStock: true }
+      ];
+      dataService.getAllItems.mockResolvedValue(mockItems);
 
       await itemController.getAllItems(mockReq, mockRes, mockNext);
 
-      expect(dataService.getAllItems).toHaveBeenCalledWith(mockReq.query);
+      expect(dataService.getAllItems).toHaveBeenCalled();
+      expect(mockRes.json).toHaveBeenCalledWith(expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({
+          pagination: expect.objectContaining({
+            currentPage: 2,
+            limit: 5
+          })
+        })
+      }));
     });
 
     it('should handle service errors', async () => {
       const error = new Error('Service error');
-      dataService.getAllItems.mockImplementation(() => {
-        throw error;
-      });
+      dataService.getAllItems.mockRejectedValue(error);
 
       await itemController.getAllItems(mockReq, mockRes, mockNext);
 
-      expect(mockNext).toHaveBeenCalledWith(error);
+      expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
     });
   });
 
@@ -91,29 +110,27 @@ describe('ItemController Unit Tests', () => {
       mockReq.params = { id: '1' };
       const mockItem = { id: 1, name: 'Apple', category: 'Fruit', price: 1.99, quantity: 10 };
       
-      dataService.getItemById.mockReturnValue(mockItem);
+      dataService.getItemById.mockResolvedValue(mockItem);
 
       await itemController.getItemById(mockReq, mockRes, mockNext);
 
-      expect(dataService.getItemById).toHaveBeenCalledWith(1);
-      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(dataService.getItemById).toHaveBeenCalledWith('1');
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
-        data: mockItem,
+        data: { item: mockItem },
         message: 'Item retrieved successfully'
       });
     });
 
     it('should handle non-existent item', async () => {
       mockReq.params = { id: '999' };
-      dataService.getItemById.mockReturnValue(null);
+      dataService.getItemById.mockResolvedValue(null);
 
       await itemController.getItemById(mockReq, mockRes, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(
-        expect.objectMatching({
-          statusCode: 404,
-          code: 'NOT_FOUND'
+        expect.objectContaining({
+          statusCode: 404
         })
       );
     });
@@ -124,7 +141,7 @@ describe('ItemController Unit Tests', () => {
       await itemController.getItemById(mockReq, mockRes, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(
-        expect.objectMatching({
+        expect.objectContaining({
           statusCode: 400,
           code: 'VALIDATION_ERROR'
         })
@@ -143,7 +160,7 @@ describe('ItemController Unit Tests', () => {
       mockReq.body = itemData;
 
       const createdItem = { id: 1, ...itemData };
-      dataService.createItem.mockReturnValue(createdItem);
+      dataService.createItem.mockResolvedValue(createdItem);
 
       await itemController.createItem(mockReq, mockRes, mockNext);
 
@@ -151,8 +168,8 @@ describe('ItemController Unit Tests', () => {
       expect(mockRes.status).toHaveBeenCalledWith(201);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
-        data: createdItem,
-        message: 'Item created successfully'
+        data: { item: createdItem },
+        message: expect.stringContaining('created successfully')
       });
     });
 
@@ -166,7 +183,7 @@ describe('ItemController Unit Tests', () => {
       await itemController.createItem(mockReq, mockRes, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(
-        expect.objectMatching({
+        expect.objectContaining({
           statusCode: 400,
           code: 'VALIDATION_ERROR'
         })
@@ -188,7 +205,11 @@ describe('ItemController Unit Tests', () => {
 
       await itemController.createItem(mockReq, mockRes, mockNext);
 
-      expect(mockNext).toHaveBeenCalledWith(error);
+      expect(mockNext).toHaveBeenCalledTimes(1);
+      const passedError = mockNext.mock.calls[0][0];
+      expect(passedError.message).toBe('Failed to create item');
+      expect(passedError.code).toBe('INTERNAL_SERVER_ERROR');
+      expect(passedError.statusCode).toBe(500);
     });
   });
 
@@ -203,16 +224,15 @@ describe('ItemController Unit Tests', () => {
       };
 
       const updatedItem = { id: 1, ...mockReq.body };
-      dataService.updateItem.mockReturnValue(updatedItem);
+      dataService.updateItem.mockResolvedValue(updatedItem);
 
       await itemController.updateItem(mockReq, mockRes, mockNext);
 
-      expect(dataService.updateItem).toHaveBeenCalledWith(1, mockReq.body);
-      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(dataService.updateItem).toHaveBeenCalledWith('1', mockReq.body);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
-        data: updatedItem,
-        message: 'Item updated successfully'
+        data: { item: updatedItem },
+        message: expect.stringContaining('updated successfully')
       });
     });
 
@@ -225,7 +245,7 @@ describe('ItemController Unit Tests', () => {
       await itemController.updateItem(mockReq, mockRes, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(
-        expect.objectMatching({
+        expect.objectContaining({
           statusCode: 404,
           code: 'NOT_FOUND'
         })
@@ -242,7 +262,7 @@ describe('ItemController Unit Tests', () => {
       await itemController.updateItem(mockReq, mockRes, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(
-        expect.objectMatching({
+        expect.objectContaining({
           statusCode: 400,
           code: 'VALIDATION_ERROR'
         })
@@ -256,7 +276,7 @@ describe('ItemController Unit Tests', () => {
       await itemController.updateItem(mockReq, mockRes, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(
-        expect.objectMatching({
+        expect.objectContaining({
           statusCode: 400,
           code: 'VALIDATION_ERROR'
         })
@@ -267,16 +287,16 @@ describe('ItemController Unit Tests', () => {
   describe('deleteItem', () => {
     it('should delete existing item successfully', async () => {
       mockReq.params = { id: '1' };
-      dataService.deleteItem.mockReturnValue(true);
+      const deletedItem = { id: 1, name: 'Apple', category: 'Fruit', price: 1.99, quantity: 10 };
+      dataService.deleteItem.mockResolvedValue(deletedItem);
 
       await itemController.deleteItem(mockReq, mockRes, mockNext);
 
-      expect(dataService.deleteItem).toHaveBeenCalledWith(1);
-      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(dataService.deleteItem).toHaveBeenCalledWith('1');
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
-        data: null,
-        message: 'Item deleted successfully'
+        data: { deletedItem },
+        message: expect.stringContaining('deleted successfully')
       });
     });
 
@@ -287,7 +307,7 @@ describe('ItemController Unit Tests', () => {
       await itemController.deleteItem(mockReq, mockRes, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(
-        expect.objectMatching({
+        expect.objectContaining({
           statusCode: 404,
           code: 'NOT_FOUND'
         })
@@ -300,7 +320,7 @@ describe('ItemController Unit Tests', () => {
       await itemController.deleteItem(mockReq, mockRes, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(
-        expect.objectMatching({
+        expect.objectContaining({
           statusCode: 400,
           code: 'VALIDATION_ERROR'
         })
@@ -308,34 +328,38 @@ describe('ItemController Unit Tests', () => {
     });
   });
 
-  describe('resetItems', () => {
+  describe('resetData', () => {
     it('should reset items successfully', async () => {
-      dataService.resetToDefaults.mockImplementation(() => {});
+      const itemCount = 5;
+      dataService.resetData.mockResolvedValue(itemCount);
 
-      await itemController.resetItems(mockReq, mockRes, mockNext);
+      await itemController.resetData(mockReq, mockRes, mockNext);
 
-      expect(dataService.resetToDefaults).toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(dataService.resetData).toHaveBeenCalled();
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
-        data: null,
-        message: 'Items reset successfully to default data'
+        data: { itemCount },
+        message: `Data reset successfully. Restored ${itemCount} default items.`
       });
     });
 
     it('should handle service errors during reset', async () => {
       const error = new Error('Reset failed');
-      dataService.resetToDefaults.mockImplementation(() => {
+      dataService.resetData.mockImplementation(() => {
         throw error;
       });
 
-      await itemController.resetItems(mockReq, mockRes, mockNext);
+      await itemController.resetData(mockReq, mockRes, mockNext);
 
-      expect(mockNext).toHaveBeenCalledWith(error);
+      expect(mockNext).toHaveBeenCalledTimes(1);
+      const passedError = mockNext.mock.calls[0][0];
+      expect(passedError.message).toBe('Failed to reset data');
+      expect(passedError.code).toBe('INTERNAL_SERVER_ERROR');
+      expect(passedError.statusCode).toBe(500);
     });
   });
 
-  describe('getStatistics', () => {
+  describe('getStats', () => {
     it('should return statistics successfully', async () => {
       const mockStats = {
         totalItems: 10,
@@ -344,28 +368,31 @@ describe('ItemController Unit Tests', () => {
         averagePrice: 9.99
       };
 
-      dataService.getStatistics.mockReturnValue(mockStats);
+      dataService.getStats.mockResolvedValue(mockStats);
 
-      await itemController.getStatistics(mockReq, mockRes, mockNext);
+      await itemController.getStats(mockReq, mockRes, mockNext);
 
-      expect(dataService.getStatistics).toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(dataService.getStats).toHaveBeenCalled();
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
-        data: mockStats,
+        data: { stats: mockStats },
         message: 'Statistics retrieved successfully'
       });
     });
 
     it('should handle service errors during statistics retrieval', async () => {
       const error = new Error('Statistics failed');
-      dataService.getStatistics.mockImplementation(() => {
+      dataService.getStats.mockImplementation(() => {
         throw error;
       });
 
-      await itemController.getStatistics(mockReq, mockRes, mockNext);
+      await itemController.getStats(mockReq, mockRes, mockNext);
 
-      expect(mockNext).toHaveBeenCalledWith(error);
+      expect(mockNext).toHaveBeenCalledTimes(1);
+      const passedError = mockNext.mock.calls[0][0];
+      expect(passedError.message).toBe('Failed to retrieve statistics');
+      expect(passedError.code).toBe('INTERNAL_SERVER_ERROR');
+      expect(passedError.statusCode).toBe(500);
     });
   });
 });

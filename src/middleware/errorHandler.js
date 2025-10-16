@@ -7,13 +7,23 @@ const { AppError } = require('../utils/errors');
  */
 function errorHandler(err, req, res, next) {
   // Log the error
+  // Handle null/undefined errors
+  if (!err) {
+    const defaultError = new Error('Internal Server Error');
+    err = defaultError;
+  }
+  
+  // Generate unique request ID if not present
+  const requestId = req.id || Math.random().toString(36).substr(2, 9);
+  req.id = requestId;
+
   const logData = {
     method: req.method,
     url: req.url,
     userAgent: req.get('User-Agent'),
     ip: req.ip,
-    error: err.message,
-    stack: err.stack
+    error: err.message || 'Unknown error',
+    stack: err.stack || 'No stack trace available'
   };
 
   if (err.statusCode >= 500) {
@@ -65,21 +75,64 @@ function errorHandler(err, req, res, next) {
       success: false,
       error: {
         code: 'INVALID_JSON',
-        message: 'Invalid JSON in request body'
+        message: 'Invalid JSON format in request body'
       },
       timestamp: new Date().toISOString(),
       requestId: req.id || 'unknown'
     });
   }
 
-  // Handle other common HTTP errors
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({
+      success: false,
+      error: {
+        code: 'PAYLOAD_TOO_LARGE',
+        message: 'Request payload too large'
+      },
+      timestamp: new Date().toISOString(),
+      requestId: req.id || 'unknown'
+    });
+  }
+
+  // Handle NotFoundError specifically
+  if (err.code === 'NOT_FOUND') {
+    let cleanMessage = err.message;
+    // Remove duplicate "not found" phrases
+    if (cleanMessage.includes(' not found not found')) {
+      cleanMessage = cleanMessage.replace(' not found not found', ' not found');
+    }
+    
+    return res.status(404).json({
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: cleanMessage
+      },
+      timestamp: new Date().toISOString(),
+      requestId: req.id || 'unknown'
+    });
+  }
+
+  // Handle errors with specific status codes and codes
   const statusCode = err.statusCode || err.status || 500;
-  const message = statusCode === 500 ? 'Internal Server Error' : err.message;
+  let errorCode = 'UNKNOWN_ERROR';
+  let message = err.message || 'Internal Server Error';
+
+  if (statusCode === 400) {
+    errorCode = err.code || 'VALIDATION_ERROR';
+  } else if (statusCode === 404) {
+    errorCode = 'NOT_FOUND';
+  } else if (statusCode === 429) {
+    errorCode = err.code || 'RATE_LIMIT_EXCEEDED';
+  } else if (statusCode === 500) {
+    errorCode = 'INTERNAL_SERVER_ERROR';
+    message = 'Internal server error';
+  }
 
   res.status(statusCode).json({
     success: false,
     error: {
-      code: 'UNKNOWN_ERROR',
+      code: errorCode,
       message: message,
       ...(isDevelopment && statusCode === 500 && { 
         originalMessage: err.message,
