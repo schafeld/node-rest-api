@@ -525,8 +525,38 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:3000/api/v1';
+        // Configuration for different deployment environments
+        const CONFIG = {
+            // Try to detect the environment
+            isDevelopment: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
+            isNetlify: window.location.hostname.includes('netlify') || window.location.hostname.includes('app'),
+            
+            // API endpoints for different environments
+            apiEndpoints: {
+                development: 'http://localhost:3000/api/v1',
+                netlify: 'https://your-api-server.herokuapp.com/api/v1', // Replace with your deployed API URL
+                demo: '/api/v1' // For static deployment - uses mock data instead of real API
+            }
+        };
+
+        // Determine which API base to use
+        let API_BASE;
+        if (CONFIG.isDevelopment) {
+            API_BASE = CONFIG.apiEndpoints.development;
+        } else if (CONFIG.isNetlify) {
+            API_BASE = CONFIG.apiEndpoints.netlify;
+        } else {
+            API_BASE = CONFIG.apiEndpoints.demo;
+        }
+
         let editingItemId = null;
+        let mockData = [
+            { id: 1, name: "Apple", category: "Fruit", price: 0.5, quantity: 25, inStock: true },
+            { id: 2, name: "Banana", category: "Fruit", price: 0.3, quantity: 15, inStock: true },
+            { id: 3, name: "Carrot", category: "Vegetable", price: 0.2, quantity: 0, inStock: false },
+            { id: 4, name: "Bread", category: "Bakery", price: 1.5, quantity: 8, inStock: true },
+            { id: 5, name: "Milk", category: "Dairy", price: 1.0, quantity: 0, inStock: false }
+        ];
 
         // Load items on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -560,6 +590,15 @@
         async function loadItems() {
             try {
                 showLoading();
+                
+                // Check if we're in demo mode (no real API backend)
+                if (API_BASE === CONFIG.apiEndpoints.demo) {
+                    // Use mock data for demo/static deployment
+                    displayItems(mockData);
+                    hideAlert();
+                    return;
+                }
+                
                 const response = await fetch(`${API_BASE}/items`);
                 
                 if (!response.ok) {
@@ -572,9 +611,17 @@
                 
             } catch (error) {
                 console.error('Error loading items:', error);
-                showAlert('Failed to load items: ' + error.message, 'error');
-                document.getElementById('itemsList').innerHTML = 
-                    '<div class="loading">Failed to load items</div>';
+                
+                // Fallback to mock data if API is not available
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    console.log('API not available, using mock data');
+                    displayItems(mockData);
+                    showAlert('Running in demo mode with sample data', 'info');
+                } else {
+                    showAlert('Failed to load items: ' + error.message, 'error');
+                    document.getElementById('itemsList').innerHTML = 
+                        '<div class="loading">Failed to load items</div>';
+                }
             }
         }
 
@@ -635,36 +682,66 @@
 
         // Create new item
         async function createItem(itemData) {
-            const response = await fetch(`${API_BASE}/items`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(itemData)
-            });
+            try {
+                // Check if we're in demo mode
+                if (API_BASE === CONFIG.apiEndpoints.demo) {
+                    // Demo mode: Add to mock data
+                    const newItem = {
+                        id: Math.max(...mockData.map(item => item.id)) + 1,
+                        ...itemData
+                    };
+                    mockData.push(newItem);
+                    showAlert(`Item "${newItem.name}" created successfully!`, 'success');
+                    clearForm();
+                    loadItems();
+                    return;
+                }
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to create item');
+                const response = await fetch(`${API_BASE}/items`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(itemData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to create item');
+                }
+
+                const result = await response.json();
+                showAlert(`Item "${result.data.item.name}" created successfully!`, 'success');
+                clearForm();
+                loadItems();
+            } catch (error) {
+                console.error('Error creating item:', error);
+                throw error;
             }
-
-            const result = await response.json();
-            showAlert(`Item "${result.data.item.name}" created successfully!`, 'success');
-            clearForm();
-            loadItems();
         }
 
         // Edit item
         async function editItem(itemId) {
             try {
-                const response = await fetch(`${API_BASE}/items/${itemId}`);
+                let item;
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
+                // Check if we're in demo mode
+                if (API_BASE === CONFIG.apiEndpoints.demo) {
+                    // Demo mode: Find in mock data
+                    item = mockData.find(i => i.id === parseInt(itemId));
+                    if (!item) {
+                        throw new Error('Item not found');
+                    }
+                } else {
+                    const response = await fetch(`${API_BASE}/items/${itemId}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
 
-                const data = await response.json();
-                const item = data.data.item;
+                    const data = await response.json();
+                    item = data.data.item;
+                }
 
                 // Fill form
                 document.getElementById('itemId').value = item.id;
@@ -687,23 +764,43 @@
 
         // Update item
         async function updateItem(itemId, itemData) {
-            const response = await fetch(`${API_BASE}/items/${itemId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(itemData)
-            });
+            try {
+                // Check if we're in demo mode
+                if (API_BASE === CONFIG.apiEndpoints.demo) {
+                    // Demo mode: Update in mock data
+                    const itemIndex = mockData.findIndex(item => item.id === parseInt(itemId));
+                    if (itemIndex !== -1) {
+                        mockData[itemIndex] = { ...mockData[itemIndex], ...itemData };
+                        showAlert(`Item "${itemData.name}" updated successfully!`, 'success');
+                        cancelEdit();
+                        loadItems();
+                        return;
+                    } else {
+                        throw new Error('Item not found');
+                    }
+                }
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to update item');
+                const response = await fetch(`${API_BASE}/items/${itemId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(itemData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to update item');
+                }
+
+                const result = await response.json();
+                showAlert(`Item "${result.data.item.name}" updated successfully!`, 'success');
+                cancelEdit();
+                loadItems();
+            } catch (error) {
+                console.error('Error updating item:', error);
+                throw error;
             }
-
-            const result = await response.json();
-            showAlert(`Item "${result.data.item.name}" updated successfully!`, 'success');
-            cancelEdit();
-            loadItems();
         }
 
         // Delete item
@@ -713,6 +810,20 @@
             }
 
             try {
+                // Check if we're in demo mode
+                if (API_BASE === CONFIG.apiEndpoints.demo) {
+                    // Demo mode: Delete from mock data
+                    const itemIndex = mockData.findIndex(item => item.id === parseInt(itemId));
+                    if (itemIndex !== -1) {
+                        mockData.splice(itemIndex, 1);
+                        showAlert(`Item "${itemName}" deleted successfully!`, 'success');
+                        loadItems();
+                        return;
+                    } else {
+                        throw new Error('Item not found');
+                    }
+                }
+
                 const response = await fetch(`${API_BASE}/items/${itemId}`, {
                     method: 'DELETE'
                 });
@@ -737,6 +848,21 @@
             }
 
             try {
+                // Check if we're in demo mode
+                if (API_BASE === CONFIG.apiEndpoints.demo) {
+                    // Demo mode: Reset mock data to original values
+                    mockData = [
+                        { id: 1, name: "Apple", category: "Fruit", price: 0.5, quantity: 25, inStock: true },
+                        { id: 2, name: "Banana", category: "Fruit", price: 0.3, quantity: 15, inStock: true },
+                        { id: 3, name: "Carrot", category: "Vegetable", price: 0.2, quantity: 0, inStock: false },
+                        { id: 4, name: "Bread", category: "Bakery", price: 1.5, quantity: 8, inStock: true },
+                        { id: 5, name: "Milk", category: "Dairy", price: 1.0, quantity: 0, inStock: false }
+                    ];
+                    showAlert('Data reset successfully!', 'success');
+                    loadItems();
+                    return;
+                }
+
                 const response = await fetch(`${API_BASE}/items/reset`, {
                     method: 'POST'
                 });
