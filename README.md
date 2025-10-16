@@ -2,6 +2,9 @@
 
 A complete REST API backend application demonstrating all HTTP methods (GET, POST, PUT, DELETE, OPTIONS) for managing an items store.
 
+**The [Netlify-version](https://schafeld-node-api-items-manager.netlify.app/) will only use mock data for display. The localhost version is running an actually separate server for the API**
+**TODO:** Attach to separate backend for live API.
+
 ## Features
 
 - ✅ **GET** - Retrieve all items or specific item by ID
