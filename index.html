@@ -617,6 +617,12 @@
                     console.log('API not available, using mock data');
                     displayItems(mockData);
                     showAlert('Running in demo mode with sample data', 'info');
+                    // demo mode to footer
+                    document.getElementById('footer').innerHTML = `
+                        <div class="alert alert-info">
+                            This is a static demo, so no real API calls are made, no edits are working. Local installations have an API backend and will be fully functional.
+                        </div>
+                    `;
                 } else {
                     showAlert('Failed to load items: ' + error.message, 'error');
                     document.getElementById('itemsList').innerHTML = 
