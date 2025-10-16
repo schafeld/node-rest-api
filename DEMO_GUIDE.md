@@ -189,7 +189,48 @@ curl http://localhost:8080/status
 - **"Failed to load items"**: Network connectivity issue or server error
 - **"Item not found"**: Attempting to access/modify non-existent item ID
 
-## 🎓 Learning Objectives
+## �️ Application Architecture: Dual-Mode Design
+
+### Why Two Modes?
+
+The application uses a **dual-mode architecture** that automatically adapts to different deployment scenarios:
+
+#### **🔧 Development Mode** (localhost)
+- **Full-stack operation** with live REST API server
+- **Real database operations** with persistent data
+- **Complete CRUD functionality** with server validation
+- **API testing and debugging** capabilities
+- **Auto-detected** when running on `localhost` or `127.0.0.1`
+
+#### **🌐 Demo Mode** (static deployment)
+- **Frontend-only operation** for platforms like Netlify, Vercel, GitHub Pages
+- **Client-side data management** using JavaScript arrays
+- **No backend infrastructure** required
+- **Perfect for showcasing** UI without server costs
+- **Automatically activated** on deployment platforms
+
+### Benefits of This Design
+
+1. **Versatility**: Same codebase works for both full-stack development and static demos
+2. **Cost-Effective**: Deploy frontend demos without expensive backend hosting
+3. **Educational**: Shows both frontend-only and full-stack implementations
+4. **Seamless Fallback**: Gracefully handles API server unavailability
+
+### Recent Improvements
+
+#### **🐛 Bug Fixes (October 2025)**
+
+1. **Reset Default Quantities**: Fixed issue where demo mode reset was setting all quantities to zero instead of their original values (Apple: 25, Banana: 15, etc.)
+
+2. **Live Statistics Updates**: Fixed issue where inline quantity updates weren't immediately updating the "Total Quantity" statistic - now updates are reflected instantly
+
+3. **Enhanced Quantity Management**: Added editable quantity fields with:
+   - **Inline editing** directly in the item list
+   - **Real-time updates** with immediate feedback
+   - **Error handling** with automatic value restoration on failure
+   - **Statistics integration** showing total inventory quantity
+
+## �🎓 Learning Objectives
 
 This demo demonstrates:
 
