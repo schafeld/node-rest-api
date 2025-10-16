@@ -755,7 +755,7 @@
                 editingItemId = itemId;
                 document.getElementById('formTitle').textContent = 'Edit Item';
                 document.getElementById('submitBtn').innerHTML = '<i class="material-icons">save</i>Update Item';
-                document.getElementById('cancelBtn').style.display = 'inline-block';
+                document.getElementById('cancelBtn').style.display = '';
 
             } catch (error) {
                 showAlert('Failed to load item: ' + error.message, 'error');
