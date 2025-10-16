@@ -203,7 +203,7 @@ curl -X POST http://localhost:3000/reset
                         error: 'Bad Request',
                         message: 'Missing required fields: name, category, price',
                         required: ['name', 'category', 'price'],
-                        optional: ['inStock']
+                        optional: ['quantity', 'inStock']
                     });
                     return;
                 }
@@ -214,6 +214,7 @@ curl -X POST http://localhost:3000/reset
                     name: newItemData.name,
                     category: newItemData.category,
                     price: parseFloat(newItemData.price),
+                    quantity: newItemData.quantity !== undefined ? parseInt(newItemData.quantity) : 0,
                     inStock: newItemData.inStock !== undefined ? newItemData.inStock : true
                 };
                 
@@ -258,6 +259,7 @@ curl -X POST http://localhost:3000/reset
                     name: updateData.name !== undefined ? updateData.name : currentItem.name,
                     category: updateData.category !== undefined ? updateData.category : currentItem.category,
                     price: updateData.price !== undefined ? parseFloat(updateData.price) : currentItem.price,
+                    quantity: updateData.quantity !== undefined ? parseInt(updateData.quantity) : currentItem.quantity,
                     inStock: updateData.inStock !== undefined ? updateData.inStock : currentItem.inStock
                 };
                 

@@ -339,3 +339,24 @@ Started as [Coursera short course](https://www.coursera.org/learn/node-js-restfu
 - [ ] Rate limiting
 - [ ] API versioning
 - [ ] Logging and monitoring
+- [ ] Import/export data
+
+## TODO
+
+- Should 'in stock' be changed automatically when item count is zero? Or should 'in stock' be renamed to 'available for purchase'?
+- Changing unit numbers is possible inside the list – desirable or not?
+
+## Developer Quick Notes
+
+Running demo / dev env:
+
+```bash
+# start app and api
+bash start-demo.sh
+
+# check if server/app running
+bash start-demo.sh status
+
+# stop app and api
+bash start-demo.sh stop
+```

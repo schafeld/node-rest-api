@@ -730,6 +730,10 @@
                     <div class="stat-number" id="outOfStockItems">0</div>
                     <div class="stat-label">Out of Stock</div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalQuantity">0</div>
+                    <div class="stat-label">Total Quantity</div>
+                </div>
             </div>
 
             <div class="main-content">
@@ -802,6 +806,11 @@
                         <div class="input-field">
                             <input type="number" id="itemPrice" step="0.01" min="0" required>
                             <label for="itemPrice">Price ($) *</label>
+                        </div>
+
+                        <div class="input-field">
+                            <input type="number" id="itemQuantity" min="0" value="0">
+                            <label for="itemQuantity">Quantity</label>
                         </div>
 
                         <div class="checkbox-field">
@@ -883,11 +892,11 @@
 
         let editingItemId = null;
         let mockData = [
-            { id: 1, name: "Apple", category: "Fruit", price: 0.5, inStock: true },
-            { id: 2, name: "Banana", category: "Fruit", price: 0.3, inStock: true },
-            { id: 3, name: "Carrot", category: "Vegetable", price: 0.2, inStock: false },
-            { id: 4, name: "Bread", category: "Bakery", price: 1.5, inStock: true },
-            { id: 5, name: "Milk", category: "Dairy", price: 1.0, inStock: false }
+            { id: 1, name: "Apple", category: "Fruit", price: 0.5, quantity: 25, inStock: true },
+            { id: 2, name: "Banana", category: "Fruit", price: 0.3, quantity: 15, inStock: true },
+            { id: 3, name: "Carrot", category: "Vegetable", price: 0.2, quantity: 0, inStock: false },
+            { id: 4, name: "Bread", category: "Bakery", price: 1.5, quantity: 8, inStock: true },
+            { id: 5, name: "Milk", category: "Dairy", price: 1.0, quantity: 0, inStock: false }
         ];
 
         // Load items on page load
@@ -1011,6 +1020,19 @@
                                 $${item.price.toFixed(2)}
                             </div>
                             <div class="item-detail">
+                                <i class="material-icons" style="font-size: 16px;">inventory_2</i>
+                                <span class="quantity-display">
+                                    <input type="number" 
+                                           id="quantity-${item.id}" 
+                                           value="${item.quantity || 0}" 
+                                           min="0" 
+                                           style="width: 60px; padding: 2px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                                           onchange="updateQuantity(${item.id}, this.value)"
+                                           onclick="event.stopPropagation()">
+                                    <span style="margin-left: 4px; color: #666; font-size: 12px;">units</span>
+                                </span>
+                            </div>
+                            <div class="item-detail">
                                 <span class="status-indicator ${item.inStock ? 'status-in-stock' : 'status-out-of-stock'}">
                                     <i class="material-icons" style="font-size: 12px;">${item.inStock ? 'check_circle' : 'cancel'}</i>
                                     ${item.inStock ? 'In Stock' : 'Out of Stock'}
@@ -1038,10 +1060,12 @@
             const totalItems = items.length;
             const inStockItems = items.filter(item => item.inStock).length;
             const outOfStockItems = totalItems - inStockItems;
+            const totalQuantity = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
             document.getElementById('totalItems').textContent = totalItems;
             document.getElementById('inStockItems').textContent = inStockItems;
             document.getElementById('outOfStockItems').textContent = outOfStockItems;
+            document.getElementById('totalQuantity').textContent = totalQuantity;
         }
 
         // Create new item (with fallback for demo mode)
@@ -1050,6 +1074,7 @@
                 name: document.getElementById('itemName').value,
                 category: document.getElementById('itemCategory').value,
                 price: parseFloat(document.getElementById('itemPrice').value),
+                quantity: parseInt(document.getElementById('itemQuantity').value) || 0,
                 inStock: document.getElementById('itemInStock').checked
             };
 
@@ -1133,13 +1158,16 @@
                 document.getElementById('itemName').value = item.name;
                 document.getElementById('itemCategory').value = item.category;
                 document.getElementById('itemPrice').value = item.price;
+                document.getElementById('itemQuantity').value = item.quantity || 0;
                 document.getElementById('itemInStock').checked = item.inStock;
 
                 // Trigger label animations for filled inputs
                 const nameInput = document.getElementById('itemName');
                 const priceInput = document.getElementById('itemPrice');
+                const quantityInput = document.getElementById('itemQuantity');
                 nameInput.setAttribute('value', item.name);
                 priceInput.setAttribute('value', item.price);
+                quantityInput.setAttribute('value', item.quantity || 0);
 
                 // Update Material Design select
                 const categorySelect = document.getElementById('itemCategory');
@@ -1165,6 +1193,7 @@
                 name: document.getElementById('itemName').value,
                 category: document.getElementById('itemCategory').value,
                 price: parseFloat(document.getElementById('itemPrice').value),
+                quantity: parseInt(document.getElementById('itemQuantity').value) || 0,
                 inStock: document.getElementById('itemInStock').checked
             };
 
@@ -1350,10 +1379,61 @@
             document.querySelector('.form-section .section-title').innerHTML = '<i class="material-icons">edit</i>Item Form';
         }
 
+        // Update quantity inline (for quick edits)
+        async function updateQuantity(itemId, newQuantity) {
+            const quantity = parseInt(newQuantity) || 0;
+            
+            try {
+                if (CONFIG.isDevelopment) {
+                    // Try real API first
+                    try {
+                        const response = await fetch(`${API_BASE}/items/${itemId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ quantity: quantity })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+
+                        const data = await response.json();
+                        showAlert(`Updated quantity for ${data.item.name} to ${quantity}`, 'success');
+                        return;
+                    } catch (apiError) {
+                        console.warn('API not available, using demo mode:', apiError);
+                        // Fall through to demo mode
+                    }
+                }
+                
+                // Demo mode: Update mock data
+                const item = mockData.find(i => i.id === parseInt(itemId));
+                if (item) {
+                    item.quantity = quantity;
+                    showAlert(`Updated quantity for ${item.name} to ${quantity}`, 'success');
+                } else {
+                    throw new Error('Item not found');
+                }
+                
+            } catch (error) {
+                console.error('Error updating quantity:', error);
+                showAlert(`Failed to update quantity: ${error.message}`, 'error');
+                // Reset the input to original value
+                const input = document.getElementById(`quantity-${itemId}`);
+                const originalItem = mockData.find(i => i.id === parseInt(itemId));
+                if (input && originalItem) {
+                    input.value = originalItem.quantity || 0;
+                }
+            }
+        }
+
         // Clear form
         function clearForm() {
             document.getElementById('itemForm').reset();
             document.getElementById('itemId').value = '';
+            document.getElementById('itemQuantity').value = '0';
             document.getElementById('itemInStock').checked = true;
             
             // Clear value attributes to reset label animations
